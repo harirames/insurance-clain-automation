@@ -1,0 +1,111 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Enums — values match policy_terms.json and test_cases.json exactly ───────
+
+enum UserRole {
+  MEMBER
+  OPS
+}
+
+enum ClaimCategory {
+  CONSULTATION
+  DIAGNOSTIC
+  PHARMACY
+  DENTAL
+  VISION
+  ALTERNATIVE_MEDICINE
+}
+
+enum DocumentType {
+  PRESCRIPTION
+  HOSPITAL_BILL
+  LAB_REPORT
+  PHARMACY_BILL
+  DENTAL_REPORT
+  DIAGNOSTIC_REPORT
+  DISCHARGE_SUMMARY
+}
+
+enum ClaimStatus {
+  HALTED
+  APPROVED
+  PARTIAL
+  REJECTED
+  MANUAL_REVIEW
+}
+
+enum DocumentQuality {
+  GOOD
+  POOR
+  UNREADABLE
+}
+
+// ─── Models ───────────────────────────────────────────────────────────────────
+
+model User {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  passwordHash String
+  role         UserRole
+  memberId     String?  @unique
+  name         String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Back-relations
+  memberClaims      Claim[]    @relation("ClaimMember")
+  submittedClaims   Claim[]    @relation("ClaimSubmitter")
+  uploadedDocuments Document[]
+
+  @@index([role])
+}
+
+model Claim {
+  id            String        @id @default(cuid())
+  memberId      String        // references User.memberId ("EMP001" style)
+  member        User          @relation("ClaimMember", fields: [memberId], references: [memberId])
+  policyId      String
+  claimCategory ClaimCategory
+  treatmentDate DateTime
+  claimedAmount Decimal       @db.Decimal(12, 2)
+  hospitalName  String?
+  submittedBy   String        // references User.id (cuid)
+  submitter     User          @relation("ClaimSubmitter", fields: [submittedBy], references: [id])
+  status        ClaimStatus
+  approvedAmount Decimal?     @db.Decimal(12, 2)
+  decisionTrace Json
+  documents     Document[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([memberId, createdAt])
+  @@index([submittedBy, createdAt])
+  @@index([status, createdAt])
+}
+
+model Document {
+  id                 String           @id @default(cuid())
+  claimId            String
+  claim              Claim            @relation(fields: [claimId], references: [id], onDelete: Cascade)
+  uploadedBy         String           // references User.id (cuid)
+  uploader           User             @relation(fields: [uploadedBy], references: [id])
+  fileName           String
+  actualType         DocumentType
+  mimeType           String
+  cloudinaryPublicId String
+  cloudinaryUrl      String
+  quality            DocumentQuality?
+  patientNameOnDoc   String?
+  extractedContent   Json?
+  confidence         Json?
+  createdAt          DateTime         @default(now())
+
+  @@index([claimId])
+  @@index([uploadedBy])
+}
