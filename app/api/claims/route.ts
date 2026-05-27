@@ -3,8 +3,9 @@ import { createId } from "@paralleldrive/cuid2";
 
 import { auth } from "@/lib/auth/session";
 import { uploadDocument, isAllowedMimeType } from "@/lib/storage/cloudinary";
-import { listByMember, listAll } from "@/lib/storage/claimsRepo";
+import { listByMember, listAll, createClaim } from "@/lib/storage/claimsRepo";
 import { ClaimCategorySchema } from "@/lib/types";
+import { runPipeline } from "@/lib/pipeline/orchestrator";
 
 export async function POST(req: NextRequest) {
   const session = await auth();
@@ -70,11 +71,38 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  // TODO: run orchestrator pipeline (Phase 5) — stub for now
-  // const trace = await runPipeline({ ... });
+  // Run the pipeline
+  const submission = {
+    memberId,
+    policyId: "PLUM_GHI_2024",
+    claimCategory: categoryParse.data,
+    treatmentDate,
+    claimedAmount,
+    hospitalName,
+    submittedBy: session.user.id ?? session.user.memberId ?? "unknown",
+    documents: uploadedDocs.map((d) => ({
+      fileId: d.fileId,
+      fileName: d.fileName,
+      cloudinaryPublicId: d.cloudinaryPublicId,
+      cloudinaryUrl: d.cloudinaryUrl,
+      mimeType: d.mimeType,
+    })),
+  };
 
-  // Stub decision until pipeline is implemented
-  const { createClaim } = await import("@/lib/storage/claimsRepo");
+  let trace;
+  try {
+    trace = await runPipeline(claimId, submission);
+  } catch (err) {
+    return NextResponse.json(
+      { error: `Pipeline error: ${err instanceof Error ? err.message : String(err)}` },
+      { status: 500 }
+    );
+  }
+
+  const finalStatus = trace.decision?.status ?? "MANUAL_REVIEW";
+  const approvedAmount = trace.decision?.approvedAmount ?? undefined;
+  const submittedBy = session.user.id ?? session.user.memberId ?? "unknown";
+
   const claim = await createClaim({
     memberId,
     policyId: "PLUM_GHI_2024",
@@ -82,24 +110,17 @@ export async function POST(req: NextRequest) {
     treatmentDate: new Date(treatmentDate),
     claimedAmount,
     hospitalName,
-    submittedBy: session.user.id ?? session.user.memberId ?? "unknown",
-    status: "MANUAL_REVIEW",
-    decisionTrace: {
-      claimId,
-      startedAt: new Date().toISOString(),
-      endedAt: new Date().toISOString(),
-      stages: [],
-      componentFailures: [],
-      confidence: { documents: 0, fraud: 0, overall: 0 },
-      decision: null,
-    },
+    submittedBy,
+    status: finalStatus,
+    approvedAmount,
+    decisionTrace: trace,
     documents: uploadedDocs.map((d) => ({
       fileName: d.fileName,
-      actualType: "PRESCRIPTION", // will be detected by verifier agent
+      actualType: "PRESCRIPTION", // detected by verifier agent
       mimeType: d.mimeType,
       cloudinaryPublicId: d.cloudinaryPublicId,
       cloudinaryUrl: d.cloudinaryUrl,
-      uploadedBy: session.user.id ?? session.user.memberId ?? "unknown",
+      uploadedBy: submittedBy,
     })),
   });
 

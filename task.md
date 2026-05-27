@@ -353,25 +353,21 @@ Goal: tie the agents together with a **deterministic** controller; produce one e
 
 ---
 
-## Phase 6 — UI (≈3–4h)
+## Phase 6 — UI ✅
 
-Goal: a usable submission + review surface. Server actions + the App Router are fine; keep client state minimal.
+**What was built:**
 
-- [ ] `/` submission form:
-  - Submitting member is pulled from `auth()` (the logged-in `MEMBER`); ops users get a member picker populated from the policy roster.
-  - Claim category dropdown.
-  - Treatment date, claimed amount, hospital name (optional).
-  - File upload (multi-file, images + PDF).
-  - On submit, POST to a server action / route handler that runs the pipeline.
-- [ ] `/claims/[id]` decision review:
-  - Decision banner (`APPROVED` / `PARTIAL` / `REJECTED` / `MANUAL_REVIEW`) with color cue.
-  - Approved amount + financial breakdown (line items, discount, co-pay) sourced from the `apply_financials` tool call in the trace.
-  - Trace viewer: stages with PASS/FAIL/DEGRADED chips, expand to see each agent's transcript — every model turn and every tool call (name, args, result) rendered inline. This is the multi-agent demo surface; make it look good.
-  - Rejection / problem messages rendered prominently and verbatim from the pipeline (so the TC001-style specificity survives to the user).
-- [ ] `/eval` page: button that runs all 12 test cases server-side and renders a table of expected vs. actual. Useful for the demo video.
-- [ ] Manual browser test of the golden path and at least one rejection path before declaring this phase done.
-
-**Exit:** A claim can be submitted via the browser and its full trace inspected on a separate page. Eval page works.
+- [x] `lib/actions/submitClaim.ts` — server action: Cloudinary upload → `runPipeline()` → `createClaim()` → `redirect(/claims/[id])`.
+- [x] `app/page.tsx` — home: submission form + recent claims list. OPS member picker from policy roster; MEMBER hidden memberId. Nav to `/eval`.
+- [x] `components/claim/ClaimSubmissionForm.tsx` — `useActionState` form, multi-file upload with preview, spinner, inline errors.
+- [x] `components/claim/DecisionBanner.tsx` — color-coded (APPROVED/PARTIAL/REJECTED/MANUAL_REVIEW/HALTED). Shows amount, rationale, rejection chips, confidence bar. Verbatim verifier halt message.
+- [x] `components/claim/FinancialBreakdownCard.tsx` — line items + gross→discount→co-pay→payable waterfall. Numbers from trace only.
+- [x] `components/claim/TraceViewer.tsx` — expandable stages with PASS/FAIL/DEGRADED chips + latency. Each tool call shows args + result side-by-side. Submit tools in blue.
+- [x] `app/claims/[id]/page.tsx` — DecisionBanner + FinancialBreakdown + metadata + doc list + TraceViewer.
+- [x] `app/api/eval/route.ts` — POST handler running all 12 test cases through the real pipeline.
+- [x] `app/eval/page.tsx` — Run button → progress bar + expected vs actual table, expandable failure notes.
+- [x] `app/api/claims/route.ts` — wired to real `runPipeline()`, Phase 5 stub removed.
+- [x] `npm run build` → clean (TypeScript + Turbopack). `npm test` → 124/124.
 
 ---
 

@@ -181,7 +181,7 @@ export async function listAll(filter: ListClaimsFilter = {}): Promise<ClaimRecor
     where: filter.status ? { status: filter.status } : undefined,
     include: { documents: true },
     orderBy: { createdAt: "desc" },
-    take: filter.limit ?? 100,
+    ...(filter.limit != null ? { take: filter.limit } : {}),
     skip: filter.offset ?? 0,
   });
   return results.map(serialiseClaim);
