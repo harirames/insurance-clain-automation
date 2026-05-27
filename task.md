@@ -375,12 +375,12 @@ Goal: tie the agents together with a **deterministic** controller; produce one e
 
 Goal: produce the deliverable eval report and prove every test case behaves.
 
-- [ ] `tests/integration/runAllTestCases.test.ts` iterates `test_cases.json`, runs the pipeline, asserts:
+- [x] `tests/integration/runAllTestCases.test.ts` iterates `test_cases.json`, runs the pipeline, asserts:
   - Halt cases (TC001–TC003): `decision === null` and the error type matches.
   - Approval cases: `decision`, `approved_amount`, and reason match exactly.
   - Confidence thresholds (TC004 > 0.85, TC012 > 0.90).
-- [ ] Generate `EVAL_REPORT.md` from the test run: per case, show input summary, produced decision, full trace, expected vs. actual, and an explanation for any mismatch.
-- [ ] CI-friendly: `npm test` runs unit + integration in one shot.
+- [x] Generate `EVAL_REPORT.md` from the test run: per case, show input summary, produced decision, full trace, expected vs. actual, and an explanation for any mismatch.
+- [x] CI-friendly: `npm test` runs unit + integration in one shot.
 
 **Exit:** All 12 cases either pass or have a written, defended explanation for divergence. `EVAL_REPORT.md` is committed.
 
