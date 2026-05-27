@@ -100,6 +100,21 @@ public/                     # static assets only
 6. Relative imports (`./`, `../`) — only for genuinely local siblings
 Blank line between groups. `@/*` is the only path alias.
 
+## Persistence — Prisma + Postgres + Cloudinary
+- **Database: Postgres via Prisma.** Schema in `prisma/schema.prisma`; generated client imported only via `lib/db.ts` (singleton, HMR-safe). Migrations live in `prisma/migrations/` and are committed. Connection string in `DATABASE_URL`; if using a pooler (Neon, Supabase, Vercel Postgres) also set `DIRECT_URL` for migrations.
+- **Schema (minimum viable):**
+  - `Claim` — `id`, `memberId`, `policyId`, `claimCategory`, `treatmentDate`, `claimedAmount`, `hospitalName?`, `submittedBy`, `status` (enum incl. `HALTED` for document-problem stops), `approvedAmount?`, `decisionTrace` (`Json`), `createdAt`, `updatedAt`.
+  - `Document` — `id`, `claimId` (FK → `Claim.id`, cascade delete), `fileName`, `actualType` (enum), `mimeType`, `cloudinaryPublicId`, `cloudinaryUrl`, `quality?`, `patientNameOnDoc?`, `extractedContent?` (`Json`), `confidence?` (`Json`), `createdAt`.
+  - Enums: `ClaimCategory`, `DocumentType`, `ClaimStatus`. Values must match the strings in `policy_terms.json` / `test_cases.json` exactly. Members are *not* a DB table — they come from `policy_terms.json`.
+- **DB access rules:** call Prisma only from Route Handlers, Server Actions, and Server Components — never from client code or from inside agents. Agents receive plain data; the orchestrator is the only thing that reads/writes claims.
+- **Repository layer:** thin wrappers in `lib/storage/claimsRepo.ts` (`createClaim`, `getClaim`, `listByMember`, `listAll`) — keeps Prisma calls out of route handlers and gives one place to add caching later.
+- **Document storage: Cloudinary.** Server-side uploads via the `cloudinary` SDK; never expose `CLOUDINARY_API_SECRET` to the client. Wrapper in `lib/storage/cloudinary.ts` exposes `uploadDocument(claimId, file)` → `{ publicId, url, mimeType }` and `getDocumentUrl(publicId)`. Use a `claims/<claimId>/` folder convention. Allowed types: `image/jpeg`, `image/png`, `application/pdf`. Document URLs are passed to the Gemini extractor as remote `fileData` parts (Gemini fetches them directly — no need to download server-side first).
+- **Env vars** (add to `.env.example`):
+  - `DATABASE_URL` — Postgres connection string (pooled if applicable).
+  - `DIRECT_URL` — direct connection for `prisma migrate` (optional, only with poolers).
+  - `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`.
+- **Vercel deploy:** all three services work on Vercel serverless. Use Vercel Postgres / Neon for `DATABASE_URL`. Add `"postinstall": "prisma generate"` to `package.json` so the client is generated during Vercel builds.
+
 ## Authentication — NextAuth (Auth.js v5) Credentials provider
 - **Use NextAuth v5 (`next-auth@beta`, App Router style).** Credentials provider only — no OAuth, no email magic links, no database adapter for this assignment. Sessions via JWT (`session: { strategy: "jwt" }`).
 - **Two roles:** `MEMBER` (submits claims, sees only their own) and `OPS` (reviews all claims, can run the eval harness). Role is stored in the JWT and surfaced via `session.user.role`.

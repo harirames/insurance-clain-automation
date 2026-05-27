@@ -125,6 +125,140 @@ Goal: gate the app behind login so `MEMBER` and `OPS` flows are separable from d
 
 ---
 
+## Phase 0.7 — Persistence: Prisma + Postgres + Cloudinary (≈2h)
+
+Goal: persistent claims and decision traces in Postgres via Prisma, uploaded documents in Cloudinary. Vercel-compatible end to end.
+
+### 0.7a — Postgres + Prisma setup
+
+- [ ] Pick a Postgres host:
+  - Local dev: Docker (`docker run -e POSTGRES_PASSWORD=dev -p 5432:5432 postgres:16`) — fastest to start.
+  - Cloud/Vercel: Neon, Supabase, or Vercel Postgres (free tiers fine).
+- [ ] Install: `npm i prisma @prisma/client && npm i -D prisma` (Prisma is also a peer of `prisma`). Run `npx prisma init`.
+- [ ] Add `"postinstall": "prisma generate"` to `package.json` (required so `prisma generate` runs during Vercel builds).
+- [ ] Env vars in `.env.local` + `.env.example`:
+  - `DATABASE_URL` — pooled connection string for runtime.
+  - `DIRECT_URL` — direct connection for migrations (only with poolers like Neon/Supabase).
+- [ ] `lib/db.ts` — HMR-safe Prisma client singleton:
+  ```ts
+  import { PrismaClient } from "@prisma/client";
+  const g = globalThis as unknown as { prisma?: PrismaClient };
+  export const prisma = g.prisma ?? new PrismaClient();
+  if (process.env.NODE_ENV !== "production") g.prisma = prisma;
+  ```
+
+### 0.7b — Schema (`prisma/schema.prisma`)
+
+- [ ] Enums (values must match strings in `policy_terms.json` / `test_cases.json`):
+  ```prisma
+  enum ClaimCategory { CONSULTATION DIAGNOSTIC PHARMACY DENTAL VISION ALTERNATIVE_MEDICINE }
+  enum DocumentType  { PRESCRIPTION HOSPITAL_BILL LAB_REPORT PHARMACY_BILL DENTAL_REPORT DIAGNOSTIC_REPORT DISCHARGE_SUMMARY }
+  enum ClaimStatus   { HALTED APPROVED PARTIAL REJECTED MANUAL_REVIEW }
+  enum DocumentQuality { GOOD POOR UNREADABLE }
+  ```
+- [ ] Models:
+  ```prisma
+  model Claim {
+    id              String        @id @default(cuid())
+    memberId        String
+    policyId        String
+    claimCategory   ClaimCategory
+    treatmentDate   DateTime
+    claimedAmount   Decimal       @db.Decimal(12, 2)
+    hospitalName    String?
+    submittedBy     String        // user id from NextAuth session
+    status          ClaimStatus
+    approvedAmount  Decimal?      @db.Decimal(12, 2)
+    decisionTrace   Json          // full DecisionTrace, including each agent transcript
+    documents       Document[]
+    createdAt       DateTime      @default(now())
+    updatedAt       DateTime      @updatedAt
+    @@index([memberId, createdAt])
+    @@index([submittedBy, createdAt])
+  }
+
+  model Document {
+    id                  String          @id @default(cuid())
+    claimId             String
+    claim               Claim           @relation(fields: [claimId], references: [id], onDelete: Cascade)
+    fileName            String
+    actualType          DocumentType
+    mimeType            String
+    cloudinaryPublicId  String
+    cloudinaryUrl       String
+    quality             DocumentQuality?
+    patientNameOnDoc    String?
+    extractedContent    Json?
+    confidence          Json?
+    createdAt           DateTime        @default(now())
+    @@index([claimId])
+  }
+  ```
+- [ ] `npx prisma migrate dev --name init` to create the first migration. Commit `prisma/migrations/`.
+- [ ] Do **not** create a `User` or `Member` table — members come from `policy_terms.json`, ops users from `lib/auth/opsUsers.ts`, sessions are JWT.
+
+### 0.7c — Cloudinary setup
+
+- [ ] Create a free Cloudinary account. Add env vars to `.env.local` + `.env.example`:
+  - `CLOUDINARY_CLOUD_NAME`
+  - `CLOUDINARY_API_KEY`
+  - `CLOUDINARY_API_SECRET` (server-only — never imported client-side)
+- [ ] Install: `npm i cloudinary`.
+- [ ] `lib/storage/cloudinary.ts`:
+  ```ts
+  import { v2 as cloudinary } from "cloudinary";
+  cloudinary.config({ cloud_name: ..., api_key: ..., api_secret: ..., secure: true });
+  export async function uploadDocument(claimId: string, file: { name: string; bytes: Buffer; mimeType: string }) {
+    const res = await cloudinary.uploader.upload(`data:${file.mimeType};base64,${file.bytes.toString("base64")}`, {
+      folder: `claims/${claimId}`,
+      resource_type: "auto",          // handles images and PDFs
+      public_id: file.name.replace(/\.[^.]+$/, ""),
+      overwrite: false,
+    });
+    return { publicId: res.public_id, url: res.secure_url, mimeType: file.mimeType };
+  }
+  export function getDocumentUrl(publicId: string) { return cloudinary.url(publicId, { secure: true, sign_url: true }); }
+  ```
+- [ ] Allow only `image/jpeg`, `image/png`, `application/pdf` in the upload handler. Reject everything else with a shadcn `Alert` on the form.
+
+### 0.7d — Repository layer (`lib/storage/claimsRepo.ts`)
+
+Thin wrappers, no business logic. The orchestrator and route handlers call these — Prisma never leaks past this file.
+
+- [ ] `createClaim(input)` — wraps `Claim` + `Document` creates in a single `prisma.$transaction(...)` so a partial failure doesn't orphan documents.
+- [ ] `getClaim(id)` — `findUnique` with `include: { documents: true }`.
+- [ ] `listByMember(memberId)` — for the member dashboard.
+- [ ] `listAll(filter?)` — for ops; supports basic status filter + pagination.
+- [ ] All functions return plain typed objects (cast `Decimal` to `number`, `Date` to ISO string) so the rest of the codebase doesn't depend on Prisma types.
+
+### 0.7e — Wire into routes
+
+- [ ] `app/api/claims/route.ts` (POST):
+  1. `auth()` to get user — fail 401 if absent.
+  2. Parse `multipart/form-data`; for each file, validate MIME type, call `uploadDocument(tempClaimId, file)`.
+  3. Run the orchestrator with the resulting `cloudinaryUrl`s as document inputs.
+  4. `createClaim()` with the final record (status + trace + document refs).
+  5. Return `{ claim_id }`.
+- [ ] `app/api/claims/[id]/route.ts` (GET): `getClaim()`; enforce `MEMBER` ownership against `session.user.memberId`; OPS sees everything.
+- [ ] `app/claims/[id]/page.tsx` is a Server Component that calls `getClaim()` directly (no client fetch).
+- [ ] The Gemini extractor receives the Cloudinary `secure_url` as a remote `fileData` part — Gemini fetches the bytes itself, no server-side download needed.
+
+### 0.7f — Tests
+
+- [ ] Unit: `claimsRepo` round-trips a claim against a test database (use a `DATABASE_URL_TEST` Postgres or `pg-mem` if you want to avoid a real DB in unit tests).
+- [ ] Mock the Cloudinary SDK in tests — never hit Cloudinary from CI.
+- [ ] Integration: POST a multipart claim, assert a row exists with the expected status and the trace JSON contains stage transcripts; GET returns the same record.
+
+### Deployment note (document in `ASSUMPTIONS.md` + `README.md`)
+
+- All three services work on Vercel. Use Vercel Postgres or Neon for `DATABASE_URL`; pooled connection at runtime, `DIRECT_URL` for `prisma migrate deploy`.
+- Add the Cloudinary env vars in Vercel project settings.
+- Run `npx prisma migrate deploy` as part of the build (Vercel build command: `prisma generate && prisma migrate deploy && next build`). Locally, use `prisma migrate dev`.
+
+**Exit:** Submitting a claim writes one `Claim` + N `Document` rows, the documents land in Cloudinary under `claims/<claimId>/`, and `/claims/[id]` re-renders the full trace from the DB on a fresh page load.
+
+---
+
 ## Phase 1 — Document Verifier Agent (LLM + tools) (≈3h) — covers TC001, TC002, TC003
 
 Goal: stop bad submissions before any decisioning happens. The agent decides which checks to run and writes the user-facing message; deterministic tools own the actual checks. Graded at 10% but gates the rest of the pipeline.
