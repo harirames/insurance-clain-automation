@@ -388,10 +388,10 @@ Goal: produce the deliverable eval report and prove every test case behaves.
 
 ## Phase 8 — Documentation Deliverables (≈2h)
 
-- [ ] `ARCHITECTURE.md` — components, sequence diagram, what was considered and rejected (e.g., monolithic vs. multi-agent), limitations, 10× scale plan (queueing, vector storage of past claims, async extraction workers, model fallback, observability stack).
-- [ ] `CONTRACTS.md` — per-component interface: input shape, output shape, errors raised. One section per agent (`DocumentVerifier`, `Extractor`, `PolicyEvaluator`, `FraudDetector`, `Orchestrator`).
-- [ ] `ASSUMPTIONS.md` — every cut and trade-off (e.g., bypass-mode extractor for tests, in-memory claims history, no auth).
-- [ ] Update top-level `README.md` with run instructions: install, env vars, `npm run dev`, `npm test`, `/eval` page.
+- [x] `ARCHITECTURE.md` — components, sequence diagram, what was considered and rejected (e.g., monolithic vs. multi-agent), limitations, 10× scale plan (queueing, vector storage of past claims, async extraction workers, model fallback, observability stack).
+- [x] `CONTRACTS.md` — per-component interface: input shape, output shape, errors raised. One section per agent (`DocumentVerifier`, `Extractor`, `PolicyEvaluator`, `FraudDetector`, `Orchestrator`).
+- [x] `ASSUMPTIONS.md` — every cut and trade-off (e.g., bypass-mode extractor for tests, in-memory claims history, no auth).
+- [x] Update top-level `README.md` with run instructions: install, env vars, `npm run dev`, `npm test`, `/eval` page.
 
 **Exit:** A reviewer can clone, run, and understand the system without asking a question.
 
