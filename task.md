@@ -410,10 +410,10 @@ Goal: produce the deliverable eval report and prove every test case behaves.
 
 ## Cross-cutting checklist (touches every phase)
 
-- [ ] No policy rule, limit, member ID, or category string is hardcoded outside `policy_terms.json` and the matching enum.
-- [ ] Every LLM call validates output with Zod before use.
-- [ ] Every agent has at least one unit test (with the LLM mocked) and every tool has a deterministic unit test (no LLM). The pipeline has integration tests for all 12 cases.
-- [ ] Every numeric value in a decision output came from a tool return — agents never restate amounts in free text.
-- [ ] Every decision output is reconstructible from its trace alone (including each agent's transcript).
-- [ ] Network discount is applied before co-pay everywhere it appears.
-- [ ] No code path can crash the pipeline; failures land in `component_failures[]`.
+- [x] No policy rule, limit, member ID, or category string is hardcoded outside `policy_terms.json` and the matching enum.
+- [x] Every LLM call validates output with Zod before use.
+- [x] Every agent has at least one unit test (with the LLM mocked) and every tool has a deterministic unit test (no LLM). The pipeline has integration tests for all 12 cases.
+- [x] Every numeric value in a decision output came from a tool return — agents never restate amounts in free text.
+- [x] Every decision output is reconstructible from its trace alone (including each agent's transcript).
+- [x] Network discount is applied before co-pay everywhere it appears.
+- [x] No code path can crash the pipeline; failures land in `component_failures[]`.

@@ -1,0 +1,72 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Times New Roman', Times, serif; font-size: 12px; color: #111; background: #fff; padding: 32px 40px; max-width: 700px; margin: 0 auto; }
+  .letterhead { border-bottom: 3px double #333; padding-bottom: 10px; margin-bottom: 16px; }
+  .lh-name { font-size: 20px; font-weight: bold; letter-spacing: 1px; }
+  .lh-sub { font-size: 11px; color: #444; margin-top: 2px; }
+  .lh-reg { font-size: 10px; color: #666; margin-top: 4px; }
+  .row { display: flex; justify-content: space-between; margin-bottom: 4px; }
+  .label { font-size: 11px; color: #555; }
+  .value { font-weight: bold; }
+  .section { margin-top: 14px; }
+  .section-title { font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; color: #666; border-bottom: 1px solid #ccc; padding-bottom: 3px; margin-bottom: 8px; }
+  .rx { font-size: 18px; font-style: italic; font-weight: bold; margin-bottom: 6px; }
+  table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+  th { background: #f0f0f0; font-size: 11px; text-align: left; padding: 5px 8px; border: 1px solid #ccc; }
+  td { padding: 5px 8px; border: 1px solid #ccc; font-size: 11px; }
+  .total-row td { font-weight: bold; background: #f9f9f9; }
+  .stamp { display: inline-block; border: 2px solid #1a5276; color: #1a5276; border-radius: 50%; width: 80px; height: 80px; line-height: 1.2; text-align: center; padding-top: 18px; font-size: 9px; font-weight: bold; margin-top: 8px; }
+  .sig-block { margin-top: 24px; }
+  .sig-line { border-top: 1px solid #333; width: 160px; margin-top: 32px; font-size: 10px; padding-top: 3px; }
+  .footer { margin-top: 20px; font-size: 9px; color: #888; border-top: 1px solid #eee; padding-top: 6px; text-align: center; }
+  .warn { background: #fff3cd; border: 1px solid #ffc107; padding: 6px 10px; font-size: 11px; border-radius: 3px; margin-top: 10px; }
+  .blurry { filter: blur(3px) contrast(0.6); opacity: 0.5; }
+  @media print { body { padding: 0; } button { display: none !important; } }
+</style></head><body><button onclick="window.print()" style="position:fixed;top:12px;right:12px;background:#1a5276;color:#fff;border:none;border-radius:6px;padding:8px 16px;cursor:pointer;font-size:13px;z-index:999;">🖨 Print / Save PDF</button>
+    <div class="letterhead">
+      <div class="row">
+        <div>
+          <div class="lh-name">Dr. Sunil Mehta</div>
+          <div class="lh-sub">MBBS, MD</div>
+          <div class="lh-reg">Reg. No: GJ/56789/2014</div>
+        </div>
+        <div style="text-align:right;">
+          <div class="lh-name" style="font-size:15px;">Mehta Diabetes Clinic</div>
+          <div class="lh-sub">SG Highway, Ahmedabad</div>
+          <div class="lh-sub">Timings: Mon–Sat 9:00 AM – 7:00 PM</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <span><span class="label">Patient Name: </span><span class="value">Vikram Joshi (52 yrs)</span></span>
+      <span><span class="label">Date: </span><span class="value">2024-10-15</span></span>
+    </div>
+    <div class="row" style="margin-top:4px;">
+      <span><span class="label">Diagnosis: </span><span class="value">Type 2 Diabetes Mellitus</span></span>
+    </div>
+
+    
+    <div class="section">
+      <div class="rx">℞</div>
+      <table>
+        <thead><tr><th>#</th><th>Medicine</th><th>Dosage Instructions</th><th>Duration</th></tr></thead>
+        <tbody><tr><td>1</td><td>Metformin 500mg – 1 tab BD × 30 days</td><td>As directed</td><td>5 days</td></tr><tr><td>2</td><td>Glimepiride 1mg – 1 tab OD before breakfast</td><td>As directed</td><td>5 days</td></tr></tbody>
+      </table>
+    </div>
+
+    
+
+    <div class="warn">Note: HbA1c 7.8% — dietary modification advised. Review in 30 days.</div>
+
+    <div class="sig-block">
+      <div class="row">
+        <div class="stamp">Mehta<br>Clinic<br>Seal</div>
+        <div style="text-align:right;">
+          <div class="sig-line">Dr. Sunil Mehta<br>Reg. GJ/56789/2014</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">Valid for 30 days from date of issue. This prescription is for medical use only.</div>
+  </body></html>

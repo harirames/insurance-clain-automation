@@ -9,7 +9,7 @@ import type {
 import { runAgent } from "@/lib/agents/runner";
 import { MODELS } from "@/lib/llm/gemini";
 import { POLICY_EVALUATOR_SYSTEM, buildPolicyEvaluatorUserPrompt } from "@/lib/llm/prompts/policyEvaluator";
-import { policyEvaluatorTools } from "./tools";
+import { makePolicyEvaluatorTools } from "./tools";
 import { PolicyEvaluatorOutputSchema, type PolicyEvaluatorOutput } from "./schema";
 import type { ApplyFinancialsOutput } from "@/lib/policy/financials";
 
@@ -24,6 +24,8 @@ export interface PolicyEvaluatorInput {
   ytdClaimsAmount?: number;
   preAuthProvided?: boolean;
   extractedDocuments: ExtractedDocument[];
+  submissionDate?: string;
+  extractorDegraded?: boolean;
 }
 
 // ─── Public output type ───────────────────────────────────────────────────────
@@ -41,7 +43,7 @@ export async function runPolicyEvaluator(
     agentName: "policyEvaluator",
     systemPrompt: POLICY_EVALUATOR_SYSTEM,
     userPrompt: buildUserPrompt(input),
-    tools: policyEvaluatorTools,
+    tools: makePolicyEvaluatorTools(input.submissionDate),
     finalResponseSchema: PolicyEvaluatorOutputSchema,
     finalToolName: "submit_policy_decision",
     maxTurns: 12,
@@ -151,5 +153,6 @@ function buildUserPrompt(input: PolicyEvaluatorInput): string {
     testsOrdered: testsOrdered.length > 0 ? testsOrdered : undefined,
     lineItems: lineItems.length > 0 ? lineItems : undefined,
     documentFlags: documentFlags.length > 0 ? documentFlags : undefined,
+    extractorDegraded: input.extractorDegraded,
   });
 }

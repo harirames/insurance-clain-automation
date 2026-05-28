@@ -45,6 +45,7 @@ export async function generateWithTools(
     config: {
       systemInstruction: params.systemPrompt,
       tools: [toolDef],
+      temperature: 0,
     },
     contents: params.history,
   });
@@ -83,6 +84,7 @@ export async function generateStructured<T>(
       systemInstruction: params.systemPrompt,
       responseMimeType: "application/json",
       responseSchema: params.responseSchema,
+      temperature: 0,
     },
     contents: [{ role: "user", parts: userParts as Content["parts"] }],
   });

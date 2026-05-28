@@ -8,7 +8,7 @@ import { auth } from "@/lib/auth/session";
 import { uploadDocument, isAllowedMimeType } from "@/lib/storage/cloudinary";
 import { createClaim } from "@/lib/storage/claimsRepo";
 import { runPipeline } from "@/lib/pipeline/orchestrator";
-import { ClaimCategorySchema } from "@/lib/types";
+import { ClaimCategorySchema, DocumentTypeSchema, type DocumentType } from "@/lib/types";
 
 export interface SubmitClaimState {
   error?: string;
@@ -53,9 +53,11 @@ export async function submitClaim(
     cloudinaryPublicId: string;
     cloudinaryUrl: string;
     mimeType: string;
+    actualType: DocumentType | undefined;
   }> = [];
 
-  for (const file of files) {
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
     if (!isAllowedMimeType(file.type)) {
       return {
         error: `File "${file.name}" type "${file.type}" is not allowed. Use JPEG, PNG, or PDF.`,
@@ -67,12 +69,14 @@ export async function submitClaim(
       bytes,
       mimeType: file.type,
     });
+    const typeParse = DocumentTypeSchema.safeParse(formData.get(`documentType_${i}`));
     uploadedDocs.push({
       fileId: createId(),
       fileName: file.name,
       cloudinaryPublicId: uploaded.publicId,
       cloudinaryUrl: uploaded.url,
       mimeType: uploaded.mimeType,
+      actualType: typeParse.success ? typeParse.data : undefined,
     });
   }
 
@@ -91,6 +95,7 @@ export async function submitClaim(
       cloudinaryPublicId: d.cloudinaryPublicId,
       cloudinaryUrl: d.cloudinaryUrl,
       mimeType: d.mimeType,
+      actualType: d.actualType,
     })),
   };
 
@@ -119,7 +124,7 @@ export async function submitClaim(
     decisionTrace: trace,
     documents: uploadedDocs.map((d) => ({
       fileName: d.fileName,
-      actualType: "PRESCRIPTION", // will be detected by verifier
+      actualType: d.actualType ?? "PRESCRIPTION",
       mimeType: d.mimeType,
       cloudinaryPublicId: d.cloudinaryPublicId,
       cloudinaryUrl: d.cloudinaryUrl,

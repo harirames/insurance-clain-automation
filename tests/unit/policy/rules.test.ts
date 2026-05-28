@@ -32,7 +32,7 @@ describe("checkMemberEligibility", () => {
   });
 
   it("fails for treatment date after policy end", () => {
-    const result = checkMemberEligibility({ memberId: "EMP001", treatmentDate: "2025-04-01" });
+    const result = checkMemberEligibility({ memberId: "EMP001", treatmentDate: "2027-04-01" });
     expect(result.passed).toBe(false);
     expect(result.detail).toContain("outside the policy period");
   });

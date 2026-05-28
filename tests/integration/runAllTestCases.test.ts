@@ -73,7 +73,7 @@ function buildSubmission(input: Record<string, unknown>): ClaimSubmission {
       actualType: d.actual_type as ClaimSubmission["documents"][0]["actualType"],
       content: d.content as Record<string, unknown> | undefined,
       quality: (d.quality as ClaimSubmission["documents"][0]["quality"]) ?? undefined,
-      patientNameOnDoc: d.patient_name as string | undefined,
+      patientNameOnDoc: d.patient_name_on_doc as string | undefined,
     })
   );
 

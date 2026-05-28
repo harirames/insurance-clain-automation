@@ -1,0 +1,80 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Times New Roman', Times, serif; font-size: 12px; color: #111; background: #fff; padding: 32px 40px; max-width: 700px; margin: 0 auto; }
+  .letterhead { border-bottom: 3px double #333; padding-bottom: 10px; margin-bottom: 16px; }
+  .lh-name { font-size: 20px; font-weight: bold; letter-spacing: 1px; }
+  .lh-sub { font-size: 11px; color: #444; margin-top: 2px; }
+  .lh-reg { font-size: 10px; color: #666; margin-top: 4px; }
+  .row { display: flex; justify-content: space-between; margin-bottom: 4px; }
+  .label { font-size: 11px; color: #555; }
+  .value { font-weight: bold; }
+  .section { margin-top: 14px; }
+  .section-title { font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; color: #666; border-bottom: 1px solid #ccc; padding-bottom: 3px; margin-bottom: 8px; }
+  .rx { font-size: 18px; font-style: italic; font-weight: bold; margin-bottom: 6px; }
+  table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+  th { background: #f0f0f0; font-size: 11px; text-align: left; padding: 5px 8px; border: 1px solid #ccc; }
+  td { padding: 5px 8px; border: 1px solid #ccc; font-size: 11px; }
+  .total-row td { font-weight: bold; background: #f9f9f9; }
+  .stamp { display: inline-block; border: 2px solid #1a5276; color: #1a5276; border-radius: 50%; width: 80px; height: 80px; line-height: 1.2; text-align: center; padding-top: 18px; font-size: 9px; font-weight: bold; margin-top: 8px; }
+  .sig-block { margin-top: 24px; }
+  .sig-line { border-top: 1px solid #333; width: 160px; margin-top: 32px; font-size: 10px; padding-top: 3px; }
+  .footer { margin-top: 20px; font-size: 9px; color: #888; border-top: 1px solid #eee; padding-top: 6px; text-align: center; }
+  .warn { background: #fff3cd; border: 1px solid #ffc107; padding: 6px 10px; font-size: 11px; border-radius: 3px; margin-top: 10px; }
+  .blurry { filter: blur(3px) contrast(0.6); opacity: 0.5; }
+  @media print { body { padding: 0; } button { display: none !important; } }
+</style></head><body><button onclick="window.print()" style="position:fixed;top:12px;right:12px;background:#1a5276;color:#fff;border:none;border-radius:6px;padding:8px 16px;cursor:pointer;font-size:13px;z-index:999;">🖨 Print / Save PDF</button>
+    <div class="letterhead" style="text-align:center;">
+      <div class="lh-name">Medscans Diagnostic Centre</div>
+      <div class="lh-sub">NABL Accredited Laboratory — Accreditation No. MC-NABL-2024-0087</div>
+    </div>
+
+    <div style="text-align:center; font-size:13px; font-weight:bold; margin-bottom:12px; text-transform:uppercase; letter-spacing:1px;">MRI LUMBAR SPINE — REPORT</div>
+
+    <div class="row" style="margin-bottom:12px;">
+      <div>
+        <div><span class="label">Patient: </span><strong>Suresh Nair</strong></div>
+        <div><span class="label">Ref. Doctor: </span>Dr. Venkat Rao</div>
+      </div>
+      <div style="text-align:right;">
+        <div><span class="label">Date: </span><strong>2024-11-02</strong></div>
+        <div><span class="label">Sample: </span>Blood (Venous)</div>
+      </div>
+    </div>
+
+    <table>
+      <thead><tr><th>Parameter</th><th>Result</th><th>Unit</th><th>Reference Range</th></tr></thead>
+      <tbody><tr>
+          <td>L4–L5 Disc</td>
+          <td style="font-weight:bold; color:#c0392b;">Posterior broad-based disc bulge with neural foraminal narrowing <sup>H</sup></td>
+          <td></td>
+          <td>Normal: No disc herniation</td>
+        </tr><tr>
+          <td>L5–S1 Disc</td>
+          <td style="font-weight:normal; color:inherit;">Mild disc desiccation </td>
+          <td></td>
+          <td>Normal: Adequate disc height</td>
+        </tr><tr>
+          <td>Spinal Canal</td>
+          <td style="font-weight:bold; color:#c0392b;">Mild central canal stenosis at L4–L5 <sup>H</sup></td>
+          <td></td>
+          <td>Normal: No stenosis</td>
+        </tr><tr>
+          <td>Conus Medullaris</td>
+          <td style="font-weight:normal; color:inherit;">Normal at L1 level </td>
+          <td></td>
+          <td>Normal</td>
+        </tr></tbody>
+    </table>
+    <div style="font-size:10px; color:#888; margin-top:6px;"><sup>H</sup> = High &nbsp; <sup>L</sup> = Low</div>
+
+    <div class="sig-block row" style="margin-top:20px;">
+      <div>
+        <div class="stamp">Medscans<br>Lab<br>Seal</div>
+      </div>
+      <div style="text-align:right;">
+        <div class="sig-line">Lab Director / Pathologist</div>
+      </div>
+    </div>
+
+    <div class="footer">Results are for diagnostic purposes only. Correlate with clinical findings.</div>
+  </body></html>

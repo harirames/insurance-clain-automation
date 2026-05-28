@@ -42,6 +42,7 @@ export const authConfig: NextAuthConfig = {
   callbacks: {
     jwt({ token, user }) {
       if (user) {
+        token.id = user.id;
         token.role = (user as { role: string }).role;
         token.memberId = (user as { memberId: string | null }).memberId ?? null;
       }
@@ -49,6 +50,9 @@ export const authConfig: NextAuthConfig = {
     },
     session({ session, token }) {
       if (session.user) {
+        // token.id is set for sessions minted after the JWT fix;
+        // token.sub is NextAuth's built-in subject and always equals user.id
+        session.user.id = (token.id ?? token.sub) as string;
         session.user.role = token.role as string;
         session.user.memberId = (token.memberId as string | null) ?? null;
       }

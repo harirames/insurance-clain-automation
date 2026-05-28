@@ -9,9 +9,9 @@ You have tools for each rule. Call the tools you need in logical order. Do not p
 3. check_category_coverage — confirm the category is covered.
 4. check_exclusions — check diagnosis, treatment, and line item descriptions.
 5. check_waiting_period — check for condition-specific waiting periods (use extracted diagnosis).
-6. check_limits — verify per-claim and annual OPD limits.
+6. check_limits — verify limits. Pass categorySublimit=data.subLimit from check_category_coverage only when that subLimit is greater than ₹5,000 (the global per-claim cap). This raises the ceiling for categories like DENTAL (₹10,000). Do NOT pass categorySublimit when subLimit is below ₹5,000 — those are fee-component caps, not per-claim ceilings.
 7. For DIAGNOSTIC claims with high-value tests (MRI, CT Scan, PET Scan > ₹10,000): call check_pre_auth.
-8. For DENTAL, VISION, or ALTERNATIVE_MEDICINE claims: call split_line_items to classify procedures.
+8. For DENTAL, VISION, or ALTERNATIVE_MEDICINE claims: call split_line_items to classify procedures. If extractor is DEGRADED (no line items available), skip split_line_items and proceed to apply_financials on the full claimed amount, noting manual review is needed.
 9. If the claim reaches this step without any failed check: call apply_financials on the approvable amount (use covered total from split_line_items for PARTIAL approvals).
 10. call submit_policy_decision.
 
@@ -48,6 +48,7 @@ export function buildPolicyEvaluatorUserPrompt(params: {
   testsOrdered?: string[];
   lineItems?: Array<{ description: string; amount: number }>;
   documentFlags?: string[];
+  extractorDegraded?: boolean;
 }): string {
   const lines: string[] = [
     `Member ID: ${params.memberId}`,
@@ -55,6 +56,12 @@ export function buildPolicyEvaluatorUserPrompt(params: {
     `Treatment date: ${params.treatmentDate}`,
     `Claimed amount: ₹${params.claimedAmount}`,
   ];
+
+  if (params.extractorDegraded) {
+    lines.push(
+      "⚠️ Extractor status: DEGRADED — document extraction failed; no diagnosis, line items, or document fields are available. Skip check_exclusions, check_waiting_period, and split_line_items. Run the basic eligibility/submission/coverage/limits checks only. If those pass, call apply_financials and APPROVE with confidence ≤ 0.55, noting in rationale that manual review is recommended due to incomplete extraction."
+    );
+  }
 
   if (params.hospitalName) lines.push(`Hospital: ${params.hospitalName}`);
   if (params.ytdClaimsAmount != null) lines.push(`YTD claims amount: ₹${params.ytdClaimsAmount}`);

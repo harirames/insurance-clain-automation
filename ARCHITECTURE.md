@@ -10,10 +10,10 @@ An AI-powered health insurance claims processing system built on Next.js 16 / Re
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                        Next.js App (app/)                        │
-│                                                                   │
-│  /(app)/          → Dashboard, Claims list, Claim detail         │
-│  /(app)/claims/new → Submission form                             │
+│                        Next.js App (app/)                       │
+│                                                                 │
+│  /(app)/          → Dashboard, Claims list, Claim detail        │
+│  /(app)/claims/new → Submission form                            │
 │  /(app)/eval      → Eval harness (OPS only)                     │
 │  /login           → Credential auth                             │
 │  /api/claims      → REST: submit + list                         │
@@ -23,16 +23,17 @@ An AI-powered health insurance claims processing system built on Next.js 16 / Re
                      │  server action
                      ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                      Pipeline Orchestrator                        │
-│              lib/pipeline/orchestrator.ts                         │
-│                                                                   │
-│  Stage 1 ── DocumentVerifier  (LLM agent)                        │
-│              ↓ if ok:true                                         │
-│  Stage 2 ── Extractor         (LLM agent)  ─┐                   │
-│  Stage 3 ── PolicyEvaluator   (LLM agent)   │ Promise.allSettled │
+│                      Pipeline Orchestrator                      │
+│              lib/pipeline/orchestrator.ts                       │
+│                                                                 │
+│  Stage 1 ── DocumentVerifier  (LLM agent)                       │
+│              ↓ if ok:true                                       │
+│  Stage 2 ── Extractor         (LLM agent — sequential)          │
+│              ↓ extractedDocuments passed downstream             │
+│  Stage 3 ── PolicyEvaluator   (LLM agent)  ─┐ Promise.allSettled│
 │  Stage 4 ── FraudDetector     (LLM agent)  ─┘                   │
-│              ↓                                                    │
-│  Stage 5 ── DecisionComposer  (deterministic)                    │
+│              ↓                                                  │
+│  Stage 5 ── DecisionComposer  (deterministic)                   │
 └────────────────────┬────────────────────────────────────────────┘
                      │
          ┌───────────┼───────────┐
@@ -60,12 +61,13 @@ Member         UI            /api/claims         Orchestrator
   │            │                  │                   │ ok:false? → return halt
   │            │                  │                   │ ok:true? ↓
   │            │                  │         ┌─────────▼──────────┐
-  │            │                  │         │  Extractor         │  ┐
-  │            │                  │         └────────────────────┘  │ concurrent
-  │            │                  │         ┌────────────────────┐  │ via
-  │            │                  │         │  PolicyEvaluator   │  │ Promise.
-  │            │                  │         └────────────────────┘  │ allSettled
-  │            │                  │         ┌────────────────────┐  │
+  │            │                  │         │  Extractor         │ sequential
+  │            │                  │         └─────────┬──────────┘
+  │            │                  │                   │ extractedDocuments
+  │            │                  │         ┌─────────▼──────────┐  ┐
+  │            │                  │         │  PolicyEvaluator   │  │ concurrent
+  │            │                  │         └────────────────────┘  │ via
+  │            │                  │         ┌────────────────────┐  │ Promise.allSettled
   │            │                  │         │  FraudDetector     │  ┘
   │            │                  │         └─────────┬──────────┘
   │            │                  │                   │
@@ -154,6 +156,7 @@ Rules: **discount is applied before copay**, copay is applied on the discounted 
 **Considered:** A single LLM call with a large prompt covering document verification, extraction, policy evaluation, and fraud detection.
 
 **Rejected because:**
+
 - A monolithic prompt cannot enforce that financial amounts come from tool returns. Agents would restate amounts in free text, causing calculation drift.
 - Different agents have fundamentally different reasoning modes (e.g., FraudDetector needs claims history; Extractor is pure OCR/parsing). A monolithic prompt would need all context simultaneously, ballooning token usage.
 - Individual agent failures cannot be isolated and degraded gracefully without an agentic structure.
@@ -164,7 +167,7 @@ Rules: **discount is applied before copay**, copay is applied on the discounted 
 
 **Decision:** Stages 2–4 run concurrently via `Promise.allSettled`. The extractor reads documents independently of policy evaluation. This reduces wall-clock latency from ~9s (sequential) to ~3s (parallel) for a typical claim.
 
-**Trade-off:** The PolicyEvaluator receives extracted document content as part of its context — since extraction and evaluation run in parallel, the evaluator receives the *submitted* document content (pre-extraction). The extractor output is recorded in the trace for audit but does not block evaluation. In practice this is acceptable because the submission form already collects `content` from the Cloudinary upload analysis.
+**Trade-off:** The PolicyEvaluator receives extracted document content as part of its context — since extraction and evaluation run in parallel, the evaluator receives the _submitted_ document content (pre-extraction). The extractor output is recorded in the trace for audit but does not block evaluation. In practice this is acceptable because the submission form already collects `content` from the Cloudinary upload analysis.
 
 ### Deterministic Tools, Stochastic Reasoning
 
@@ -191,15 +194,15 @@ All policy rules (sub-limits, copay percentages, waiting periods, excluded condi
 
 At 10× volume (concurrent claims, larger member base) the following changes are required:
 
-| Concern | Current | At 10× |
-|---------|---------|--------|
-| **Claim processing** | Synchronous in HTTP request | Background job queue (BullMQ / Inngest) with webhook callback to UI |
-| **LLM concurrency** | Unbounded parallel requests | Rate-limit pool per Gemini quota tier; circuit breaker per model |
-| **Model fallback** | Single model | Primary: `gemini-2.5-flash`; fallback: `gemini-2.0-flash-lite` on timeout |
-| **Document storage** | Cloudinary public | Cloudinary with signed URLs + 7-day expiry |
-| **Claims history for fraud** | Local DB scan | Vector index of past claim embeddings for semantic similarity detection |
-| **Extractor throughput** | Inline per claim | Async extraction workers (separate container) with result stored before evaluator runs |
-| **Policy loader** | Module-scope JSON | Redis cache with TTL; invalidated on policy publish event |
-| **Observability** | `console.log` | OpenTelemetry traces per agent turn; Grafana dashboard for latency + error rates |
-| **Database** | Single PG instance | PG read replicas + connection pooling (PgBouncer) |
-| **Audit trail** | JSONB in claims table | Dedicated `decision_events` table with append-only writes |
+| Concern                      | Current                     | At 10×                                                                                 |
+| ---------------------------- | --------------------------- | -------------------------------------------------------------------------------------- |
+| **Claim processing**         | Synchronous in HTTP request | Background job queue (BullMQ / Inngest) with webhook callback to UI                    |
+| **LLM concurrency**          | Unbounded parallel requests | Rate-limit pool per Gemini quota tier; circuit breaker per model                       |
+| **Model fallback**           | Single model                | Primary:`gemini-2.5-flash`; fallback: `gemini-2.0-flash-lite` on timeout               |
+| **Document storage**         | Cloudinary public           | Cloudinary with signed URLs + 7-day expiry                                             |
+| **Claims history for fraud** | Local DB scan               | Vector index of past claim embeddings for semantic similarity detection                |
+| **Extractor throughput**     | Inline per claim            | Async extraction workers (separate container) with result stored before evaluator runs |
+| **Policy loader**            | Module-scope JSON           | Redis cache with TTL; invalidated on policy publish event                              |
+| **Observability**            | `console.log`               | OpenTelemetry traces per agent turn; Grafana dashboard for latency + error rates       |
+| **Database**                 | Single PG instance          | PG read replicas + connection pooling (PgBouncer)                                      |
+| **Audit trail**              | JSONB in claims table       | Dedicated `decision_events` table with append-only writes                              |

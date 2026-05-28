@@ -94,13 +94,16 @@ This document records every assumption, deliberate cut, and trade-off made durin
 
 ---
 
-## 10. Concurrent Evaluator + Extractor Context Gap
+## 10. Pipeline Stage Ordering
 
-**Assumption:** The PolicyEvaluator receives document context from the *submission* (pre-extraction content field) rather than from the Extractor's output. Because stages 2–4 run concurrently, the Extractor has not finished by the time the PolicyEvaluator starts.
+**Design:** The pipeline runs in three sequential tiers:
+1. DocumentVerifier (halt on failure)
+2. Extractor (sequential — its `extractedDocuments` output is the input to tier 3)
+3. PolicyEvaluator ∥ FraudDetector (concurrent via `Promise.allSettled`)
 
-**Impact:** For real claims (no bypass content), the PolicyEvaluator may not have access to extracted diagnosis text when checking excluded conditions. The DocumentVerifier has already confirmed that the right document types are present.
+The Extractor completes fully before the PolicyEvaluator or FraudDetector start, so both agents receive the extracted document content (diagnosis, amounts, dates, doctor details) as structured input, not just the raw submission metadata.
 
-**Mitigation:** In production, the Extractor would run first (Stage 2), and its output would be injected into the PolicyEvaluator and FraudDetector inputs before they start (sequential stages 2→3,4).
+**Trade-off:** Making the Extractor sequential adds its latency (~2–4s) before the evaluators can start. The benefit — evaluators have real extracted data — outweighs the cost at current claim volumes. At 10× scale, the Extractor would move to an async pre-processing worker (see 10× Scale Plan).
 
 ---
 

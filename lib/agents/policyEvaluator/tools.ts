@@ -131,13 +131,21 @@ export const applyFinancialsTool: Tool<ApplyFinancialsInput, ApplyFinancialsOutp
   async run(input) { return applyFinancials(input); },
 };
 
-export const checkSubmissionRulesTool: Tool<CheckSubmissionRulesInput, CheckSubmissionRulesOutput> = {
-  name: "check_submission_rules",
-  description: "Verify the claim meets submission rules: amount is above the minimum (₹500) and was submitted within 30 days of treatment.",
-  inputSchema: CheckSubmissionRulesInputSchema,
-  outputSchema: CheckSubmissionRulesOutputSchema,
-  async run(input) { return checkSubmissionRules(input); },
-};
+function makeCheckSubmissionRulesTool(
+  submissionDate?: string
+): Tool<CheckSubmissionRulesInput, CheckSubmissionRulesOutput> {
+  return {
+    name: "check_submission_rules",
+    description: "Verify the claim meets submission rules: amount is above the minimum (₹500) and was submitted within 30 days of treatment.",
+    inputSchema: CheckSubmissionRulesInputSchema,
+    outputSchema: CheckSubmissionRulesOutputSchema,
+    async run(input) {
+      return checkSubmissionRules({ ...input, submissionDate: input.submissionDate ?? submissionDate });
+    },
+  };
+}
+
+export const checkSubmissionRulesTool = makeCheckSubmissionRulesTool();
 
 // ─── Terminating tool — intercepted by runner before run() is called ──────────
 
@@ -151,15 +159,20 @@ export const submitPolicyDecisionTool: Tool<PolicyEvaluatorOutput, { accepted: b
 
 // ─── Registry ─────────────────────────────────────────────────────────────────
 
-export const policyEvaluatorTools = {
-  [checkMemberEligibilityTool.name]: checkMemberEligibilityTool,
-  [checkWaitingPeriodTool.name]: checkWaitingPeriodTool,
-  [checkCoverageTool.name]: checkCoverageTool,
-  [checkExclusionsTool.name]: checkExclusionsTool,
-  [splitLineItemsTool.name]: splitLineItemsTool,
-  [checkLimitsTool.name]: checkLimitsTool,
-  [checkPreAuthTool.name]: checkPreAuthTool,
-  [applyFinancialsTool.name]: applyFinancialsTool,
-  [checkSubmissionRulesTool.name]: checkSubmissionRulesTool,
-  [submitPolicyDecisionTool.name]: submitPolicyDecisionTool,
-};
+export function makePolicyEvaluatorTools(submissionDate?: string) {
+  const submissionTool = makeCheckSubmissionRulesTool(submissionDate);
+  return {
+    [checkMemberEligibilityTool.name]: checkMemberEligibilityTool,
+    [checkWaitingPeriodTool.name]: checkWaitingPeriodTool,
+    [checkCoverageTool.name]: checkCoverageTool,
+    [checkExclusionsTool.name]: checkExclusionsTool,
+    [splitLineItemsTool.name]: splitLineItemsTool,
+    [checkLimitsTool.name]: checkLimitsTool,
+    [checkPreAuthTool.name]: checkPreAuthTool,
+    [applyFinancialsTool.name]: applyFinancialsTool,
+    [submissionTool.name]: submissionTool,
+    [submitPolicyDecisionTool.name]: submitPolicyDecisionTool,
+  };
+}
+
+export const policyEvaluatorTools = makePolicyEvaluatorTools();

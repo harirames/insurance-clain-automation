@@ -187,6 +187,8 @@ export async function runPipeline(
       ytdClaimsAmount: submission.ytdClaimsAmount,
       preAuthProvided: undefined,
       extractedDocuments,
+      submissionDate: submission.submissionDate,
+      extractorDegraded: degradedComponents.includes("extractor"),
     }),
     // Fraud detector
     runFraudDetector({

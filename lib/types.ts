@@ -97,6 +97,8 @@ export const ClaimSubmissionSchema = z.object({
   ytdClaimsAmount: z.number().min(0).optional(),
   // TC011: simulate component failure
   simulateComponentFailure: z.boolean().optional(),
+  // Explicit submission date for eval harness; live submissions use server-side today
+  submissionDate: z.string().date().optional(),
 });
 export type ClaimSubmission = z.infer<typeof ClaimSubmissionSchema>;
 

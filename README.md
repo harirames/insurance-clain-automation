@@ -28,7 +28,7 @@ Create `.env.local` in the project root:
 DATABASE_URL="postgresql://user:password@localhost:5432/plum_claims"
 
 # Google Gemini
-GOOGLE_GENERATIVE_AI_API_KEY="your-gemini-api-key"
+GEMINI_API_KEY="your-gemini-api-key"
 
 # Cloudinary (for document storage)
 CLOUDINARY_CLOUD_NAME="your-cloud-name"
