@@ -6,13 +6,13 @@ You have tools for each rule. Call the tools you need in logical order. Do not p
 
 1. check_member_eligibility — always call first.
 2. check_submission_rules — verify minimum amount and deadline.
-3. check_category_coverage — confirm the category is covered.
+3. check_category_coverage — confirm the category is covered. Note the returned data.subLimit and data.copayPercent for later steps.
 4. check_exclusions — check diagnosis, treatment, and line item descriptions.
 5. check_waiting_period — check for condition-specific waiting periods (use extracted diagnosis).
-6. check_limits — verify limits. Pass categorySublimit=data.subLimit from check_category_coverage only when that subLimit is greater than ₹5,000 (the global per-claim cap). This raises the ceiling for categories like DENTAL (₹10,000). Do NOT pass categorySublimit when subLimit is below ₹5,000 — those are fee-component caps, not per-claim ceilings.
-7. For DIAGNOSTIC claims with high-value tests (MRI, CT Scan, PET Scan > ₹10,000): call check_pre_auth.
-8. For DENTAL, VISION, or ALTERNATIVE_MEDICINE claims: call split_line_items to classify procedures. If extractor is DEGRADED (no line items available), skip split_line_items and proceed to apply_financials on the full claimed amount, noting manual review is needed.
-9. If the claim reaches this step without any failed check: call apply_financials on the approvable amount (use covered total from split_line_items for PARTIAL approvals).
+6. For DENTAL, VISION, or ALTERNATIVE_MEDICINE claims: call split_line_items NOW (before check_limits) to classify procedures into COVERED and EXCLUDED. If extractor is DEGRADED (no line items available), skip split_line_items and use the full claimed amount in the next step.
+7. check_limits — pass claimedAmount as: (a) coveredTotal from split_line_items if step 6 ran, otherwise (b) the full claimed amount. Pass categorySublimit=data.subLimit from step 3 only when subLimit > ₹5,000 (raises the ceiling for categories like DENTAL ₹10,000). Do NOT pass categorySublimit when subLimit ≤ ₹5,000.
+8. For DIAGNOSTIC claims with high-value tests (MRI, CT Scan, PET Scan > ₹10,000): call check_pre_auth.
+9. If the claim reaches this step without any failed check: call apply_financials. Use coveredTotal (from split_line_items) as the gross amount for PARTIAL claims; use full claimed amount for APPROVED claims.
 10. call submit_policy_decision.
 
 ## Decision rules

@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Prescription – Deepak Shah – Apollo Hospitals</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: Arial, sans-serif; font-size: 13px; color: #111; background: #fff; }
+  .page { width: 210mm; min-height: 297mm; margin: 0 auto; padding: 12mm 14mm; position: relative; }
+
+  /* Header */
+  .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #003087; padding-bottom: 10px; margin-bottom: 10px; }
+  .hospital-name { font-size: 22px; font-weight: bold; color: #003087; letter-spacing: 0.5px; }
+  .hospital-sub  { font-size: 11px; color: #555; margin-top: 2px; }
+  .hospital-addr { font-size: 10.5px; color: #444; margin-top: 4px; line-height: 1.5; }
+  .logo-box { width: 72px; height: 72px; border: 2px solid #003087; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #003087; font-size: 26px; font-weight: bold; }
+
+  /* Rx banner */
+  .rx-banner { background: #003087; color: #fff; padding: 5px 14px; font-size: 15px; font-weight: bold; letter-spacing: 1px; margin-bottom: 10px; }
+
+  /* Doctor block */
+  .doctor-block { border: 1px solid #ccc; border-radius: 4px; padding: 8px 12px; margin-bottom: 10px; background: #f7f9ff; }
+  .doctor-name  { font-size: 15px; font-weight: bold; color: #003087; }
+  .doctor-qual  { font-size: 11px; color: #555; }
+  .reg-row      { font-size: 11px; color: #333; margin-top: 3px; }
+
+  /* Patient section */
+  .section-title { font-size: 11px; font-weight: bold; color: #003087; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #dde; padding-bottom: 2px; margin-bottom: 6px; }
+  .field-row { display: flex; gap: 24px; margin-bottom: 6px; flex-wrap: wrap; }
+  .field { flex: 1; min-width: 120px; }
+  .field-label { font-size: 10px; color: #888; text-transform: uppercase; }
+  .field-value { font-size: 13px; font-weight: 600; border-bottom: 1px solid #bbb; padding-bottom: 1px; min-width: 100px; }
+
+  /* Diagnosis */
+  .diag-box { border: 1.5px solid #003087; border-radius: 4px; padding: 8px 12px; margin: 10px 0; background: #f0f4ff; }
+  .diag-label { font-size: 10px; color: #003087; font-weight: bold; text-transform: uppercase; }
+  .diag-value { font-size: 14px; font-weight: bold; color: #111; margin-top: 2px; }
+
+  /* Medicines table */
+  table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+  th { background: #003087; color: #fff; font-size: 11px; padding: 5px 8px; text-align: left; }
+  td { padding: 5px 8px; font-size: 12px; border-bottom: 1px solid #e8e8e8; vertical-align: top; }
+  tr:nth-child(even) td { background: #f9f9f9; }
+  .sl { width: 28px; text-align: center; }
+  .dosage-col { width: 110px; }
+  .dur-col { width: 80px; }
+  .inst-col { width: 130px; }
+
+  /* Notes */
+  .notes-box { border-left: 4px solid #f5a623; padding: 6px 10px; background: #fffbf0; margin: 10px 0; font-size: 12px; }
+
+  /* Tests */
+  .tests-box { border: 1px dashed #aaa; padding: 8px 12px; border-radius: 4px; margin: 10px 0; }
+  .tests-list { margin-top: 4px; padding-left: 16px; }
+  .tests-list li { font-size: 12px; margin-bottom: 2px; }
+
+  /* Footer */
+  .footer { margin-top: 20px; display: flex; justify-content: space-between; align-items: flex-end; padding-top: 10px; border-top: 1px solid #ddd; }
+  .sig-block { text-align: right; }
+  .sig-line { border-top: 1px solid #333; width: 160px; margin-top: 32px; padding-top: 3px; font-size: 11px; color: #555; text-align: center; }
+  .stamp-box { width: 80px; height: 80px; border: 2px solid #003087; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #003087; font-size: 9px; text-align: center; font-weight: bold; line-height: 1.4; opacity: 0.75; }
+
+  .validity { font-size: 10px; color: #888; margin-top: 8px; }
+
+  @media print { .print-btn { display: none; } }
+  .print-btn { position: fixed; bottom: 20px; right: 20px; background: #003087; color: #fff; border: none; border-radius: 8px; padding: 10px 20px; font-size: 14px; font-weight: bold; cursor: pointer; z-index: 999; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Header -->
+  <div class="header">
+    <div>
+      <div class="hospital-name">Apollo Hospitals</div>
+      <div class="hospital-sub">A Unit of Apollo Hospitals Enterprise Ltd.</div>
+      <div class="hospital-addr">
+        21, Greams Lane, Off Greams Road, Chennai – 600 006, Tamil Nadu<br>
+        Ph: 044-2829 0200 &nbsp;|&nbsp; Fax: 044-2829 0209 &nbsp;|&nbsp; apollo-chennai@apollohospitals.com<br>
+        NABH Accredited &nbsp;|&nbsp; NABL Accredited Lab
+      </div>
+    </div>
+    <div class="logo-box">Aₒ</div>
+  </div>
+
+  <!-- Rx banner -->
+  <div class="rx-banner">℞ &nbsp; OUTPATIENT PRESCRIPTION</div>
+
+  <!-- Doctor block -->
+  <div class="doctor-block">
+    <div class="doctor-name">Dr. S. Iyer</div>
+    <div class="doctor-qual">MBBS, MD (General Medicine) &nbsp;|&nbsp; Consultant – Internal Medicine</div>
+    <div class="reg-row">MCI Reg. No: <strong>TN/56789/2013</strong> &nbsp;|&nbsp; OPD Chamber No: 204, Block A</div>
+  </div>
+
+  <!-- Patient details -->
+  <div class="section-title">Patient Details</div>
+  <div class="field-row">
+    <div class="field"><div class="field-label">Patient Name</div><div class="field-value">Deepak Shah</div></div>
+    <div class="field"><div class="field-label">Age / Sex</div><div class="field-value">34 Y / Male</div></div>
+    <div class="field"><div class="field-label">Patient ID</div><div class="field-value">APL-2024-084312</div></div>
+  </div>
+  <div class="field-row">
+    <div class="field"><div class="field-label">Date of Consultation</div><div class="field-value">23-May-2026</div></div>
+    <div class="field"><div class="field-label">Visit Type</div><div class="field-value">OPD – Outpatient</div></div>
+    <div class="field"><div class="field-label">Insurance / Employee ID</div><div class="field-value">EMP010 – TechCorp Solutions Pvt Ltd</div></div>
+  </div>
+
+  <!-- Diagnosis -->
+  <div class="diag-box">
+    <div class="diag-label">Diagnosis / Clinical Impression</div>
+    <div class="diag-value">Acute Bronchitis &nbsp;<span style="font-size:12px;font-weight:normal;color:#555;">(ICD-10: J20.9 – Acute bronchitis, unspecified)</span></div>
+  </div>
+
+  <!-- Medicines -->
+  <div class="section-title" style="margin-top:10px;">Medications Prescribed</div>
+  <table>
+    <thead>
+      <tr>
+        <th class="sl">S.No</th>
+        <th>Drug Name &amp; Strength</th>
+        <th class="dosage-col">Dosage</th>
+        <th class="dur-col">Duration</th>
+        <th class="inst-col">Instructions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="sl">1</td>
+        <td><strong>Tab. Amoxicillin 500 mg</strong><br><span style="font-size:10px;color:#666;">Penicillin-class antibiotic</span></td>
+        <td>1 – 0 – 1<br>(BD)</td>
+        <td>7 days</td>
+        <td>After food. Complete full course.</td>
+      </tr>
+      <tr>
+        <td class="sl">2</td>
+        <td><strong>Salbutamol Inhaler (100 mcg/puff)</strong><br><span style="font-size:10px;color:#666;">Ventolin® / Asthalin®</span></td>
+        <td>2 puffs PRN</td>
+        <td>10 days</td>
+        <td>Shake well. Use spacer if available. Rinse mouth after use.</td>
+      </tr>
+      <tr>
+        <td class="sl">3</td>
+        <td><strong>Syr. Bromhexine HCl 8 mg/5 mL</strong><br><span style="font-size:10px;color:#666;">Mucolytic agent</span></td>
+        <td>10 mL – 0 – 10 mL<br>(BD)</td>
+        <td>5 days</td>
+        <td>After meals. Do not crush or chew tablets.</td>
+      </tr>
+      <tr>
+        <td class="sl">4</td>
+        <td><strong>Tab. Paracetamol 650 mg</strong><br><span style="font-size:10px;color:#666;">Antipyretic / analgesic</span></td>
+        <td>1 – 1 – 1<br>(TID)</td>
+        <td>3 days / SOS</td>
+        <td>For fever / body ache. Max 4 g/day.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- Advice -->
+  <div class="notes-box">
+    <strong>Advice:</strong> Rest for 3–5 days. Adequate hydration (2–3 L/day). Steam inhalation twice daily. Avoid cold beverages and smoky environments. Return if fever persists beyond 3 days or breathing worsens. Wear a mask in public spaces.
+  </div>
+
+  <!-- Tests -->
+  <div class="tests-box">
+    <div class="section-title">Investigations Ordered</div>
+    <ul class="tests-list">
+      <li>CBC with differential (to rule out bacterial superinfection)</li>
+      <li>CRP (C-Reactive Protein) – if fever persists after 72 hours</li>
+      <li>Chest X-ray PA view – only if no improvement by Day 4</li>
+    </ul>
+  </div>
+
+  <!-- Follow-up -->
+  <div style="font-size:12px; margin-top:6px;">
+    <strong>Follow-up:</strong> &nbsp; After 7 days or earlier if symptoms worsen.
+    &nbsp;&nbsp; <strong>OPD Slot booked:</strong> 30-May-2026, 10:30 AM – Dr. S. Iyer (Chamber 204)
+  </div>
+
+  <!-- Footer / Signature -->
+  <div class="footer">
+    <div class="stamp-box">APOLLO<br>HOSPITALS<br>CHENNAI<br>OPD<br>23/05/26</div>
+    <div class="sig-block">
+      <div class="sig-line">Dr. S. Iyer<br>MCI Reg. No: TN/56789/2013</div>
+    </div>
+  </div>
+
+  <div class="validity" style="margin-top:8px; text-align:right;">
+    This prescription is valid for 30 days from the date of issue. &nbsp;|&nbsp; For queries: 044-2829 0200 extn 204
+  </div>
+
+</div>
+
+<button class="print-btn" onclick="window.print()">🖨 Print / Save PDF</button>
+</body>
+</html>

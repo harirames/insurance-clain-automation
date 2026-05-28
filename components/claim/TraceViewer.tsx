@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { DecisionTrace, TraceStage, ToolCall } from "@/lib/types";
+import type { DecisionTrace, TraceStage, ToolCall, ExtractedDocument } from "@/lib/types";
 
 const STATUS_CHIP: Record<string, { bg: string; text: string }> = {
   PASS: { bg: "bg-emerald-100", text: "text-emerald-700" },
@@ -122,11 +122,173 @@ function StageRow({ stage, index }: { stage: TraceStage; index: number }) {
             )}
           </p>
 
-          <div className="space-y-2">
-            {toolCalls.map((tc, j) => (
-              <ToolCallRow key={j} call={tc} callIndex={j} stageIndex={index} />
+          {/* Extractor: show extracted documents instead of tool calls */}
+          {stage.name === "extractor" ? (
+            <ExtractorResult stage={stage} />
+          ) : (
+            <div className="space-y-2">
+              {toolCalls.map((tc, j) => (
+                <ToolCallRow key={j} call={tc} callIndex={j} stageIndex={index} />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ExtractorResult({ stage }: { stage: TraceStage }) {
+  const result = stage.result as { documents?: ExtractedDocument[] } | null;
+  const docs = result?.documents ?? [];
+
+  if (docs.length === 0) {
+    return (
+      <p className="text-xs text-orange-500 italic">
+        No documents extracted — extractor may have degraded or received no input.
+      </p>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      {docs.map((doc, i) => (
+        <ExtractedDocCard key={i} doc={doc} index={i} />
+      ))}
+    </div>
+  );
+}
+
+function ExtractedDocCard({ doc, index }: { doc: ExtractedDocument; index: number }) {
+  const [open, setOpen] = useState(false);
+
+  const conf = (v: number | undefined) =>
+    v != null ? `${Math.round(v * 100)}%` : null;
+
+  const fieldColor = (v: number | undefined) => {
+    if (v == null) return "text-gray-500";
+    if (v >= 0.9) return "text-emerald-600";
+    if (v >= 0.7) return "text-amber-600";
+    return "text-red-500";
+  };
+
+  const fields: Array<{ label: string; value: unknown; confidence?: number }> = [
+    { label: "Patient Name",    value: doc.patientName?.value,          confidence: doc.patientName?.confidence },
+    { label: "Doctor Name",     value: doc.doctorName?.value,           confidence: doc.doctorName?.confidence },
+    { label: "Registration No", value: doc.doctorRegistration?.value,   confidence: doc.doctorRegistration?.confidence },
+    { label: "Hospital",        value: doc.hospitalName?.value,         confidence: doc.hospitalName?.confidence },
+    { label: "Date",            value: doc.date?.value,                 confidence: doc.date?.confidence },
+    { label: "Diagnosis",       value: doc.diagnosis?.value,            confidence: doc.diagnosis?.confidence },
+    { label: "Treatment",       value: doc.treatment?.value,            confidence: doc.treatment?.confidence },
+    { label: "Total Amount",    value: doc.totalAmount?.value != null ? `₹${Number(doc.totalAmount.value).toLocaleString("en-IN")}` : null, confidence: doc.totalAmount?.confidence },
+  ].filter((f) => f.value != null && f.value !== "");
+
+  const docConfPct = Math.round((doc.documentConfidence ?? 0) * 100);
+  const docConfColor = docConfPct >= 80 ? "text-emerald-600" : docConfPct >= 50 ? "text-amber-600" : "text-red-500";
+
+  return (
+    <div className="rounded border border-gray-200 bg-white overflow-hidden">
+      {/* Header row */}
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-gray-50 transition-colors"
+      >
+        <span className="text-xs text-gray-400 w-4">{index + 1}</span>
+        <span className="font-mono text-xs font-medium text-gray-700 flex-1">
+          {doc.documentType}
+        </span>
+        {doc.flags && doc.flags.length > 0 && (
+          <div className="flex gap-1">
+            {doc.flags.map((f) => (
+              <span key={f} className="text-[10px] bg-orange-100 text-orange-700 rounded px-1.5 py-0.5 font-medium">
+                {f}
+              </span>
             ))}
           </div>
+        )}
+        <span className={`text-xs font-semibold ${docConfColor}`}>
+          {docConfPct}% conf
+        </span>
+        <svg
+          className={`h-3.5 w-3.5 text-gray-400 transition-transform ${open ? "rotate-180" : ""}`}
+          fill="none" viewBox="0 0 24 24" stroke="currentColor"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {open && (
+        <div className="border-t border-gray-100 px-3 py-3 space-y-3">
+          {/* Fields grid */}
+          {fields.length > 0 && (
+            <div className="grid grid-cols-2 gap-x-6 gap-y-2">
+              {fields.map((f) => (
+                <div key={f.label}>
+                  <p className="text-[10px] text-gray-400 uppercase tracking-wide">{f.label}</p>
+                  <div className="flex items-baseline gap-1.5">
+                    <p className="text-xs font-medium text-gray-800">{String(f.value)}</p>
+                    {f.confidence != null && (
+                      <span className={`text-[10px] font-semibold ${fieldColor(f.confidence)}`}>
+                        {conf(f.confidence)}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Medicines */}
+          {doc.medicines && doc.medicines.length > 0 && (
+            <div>
+              <p className="text-[10px] text-gray-400 uppercase tracking-wide mb-1">Medicines</p>
+              <div className="flex flex-wrap gap-1.5">
+                {doc.medicines.map((m, i) => (
+                  <span key={i} className="text-[11px] bg-blue-50 text-blue-700 border border-blue-100 rounded px-2 py-0.5">
+                    {m}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Tests ordered */}
+          {doc.testsOrdered && doc.testsOrdered.length > 0 && (
+            <div>
+              <p className="text-[10px] text-gray-400 uppercase tracking-wide mb-1">Tests Ordered</p>
+              <div className="flex flex-wrap gap-1.5">
+                {doc.testsOrdered.map((t, i) => (
+                  <span key={i} className="text-[11px] bg-purple-50 text-purple-700 border border-purple-100 rounded px-2 py-0.5">
+                    {t}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Line items */}
+          {doc.lineItems && doc.lineItems.length > 0 && (
+            <div>
+              <p className="text-[10px] text-gray-400 uppercase tracking-wide mb-1">Line Items</p>
+              <table className="w-full text-xs">
+                <tbody>
+                  {doc.lineItems.map((li, i) => (
+                    <tr key={i} className="border-b border-gray-50 last:border-0">
+                      <td className="py-1 pr-3 text-gray-700">{li.description}</td>
+                      <td className="py-1 text-right tabular-nums text-gray-800 font-medium">
+                        ₹{Number(li.amount).toLocaleString("en-IN")}
+                      </td>
+                      <td className="py-1 pl-3 text-right">
+                        <span className={`text-[10px] font-semibold ${fieldColor(li.confidence)}`}>
+                          {conf(li.confidence)}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
     </div>

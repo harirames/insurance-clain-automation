@@ -3,10 +3,14 @@ import type { Content, FunctionDeclaration, Part } from "@google/genai";
 
 import { generateWithTools, MODELS, type GeminiModel } from "@/lib/llm/gemini";
 import type { AgentTranscript, ToolCall } from "@/lib/types";
-import type { RunnerConfig, RunnerResult, ToolRegistry } from "@/lib/agents/types";
+import type {
+  RunnerConfig,
+  RunnerResult,
+  ToolRegistry,
+} from "@/lib/agents/types";
 
 const DEFAULT_MAX_TURNS = 6;
-const DEFAULT_MODEL: GeminiModel = MODELS.flash;
+const DEFAULT_MODEL: GeminiModel = MODELS.pro;
 
 // Convert a ToolRegistry into Gemini FunctionDeclarations using Zod v4 built-in
 function buildFunctionDeclarations(tools: ToolRegistry): FunctionDeclaration[] {
@@ -18,7 +22,7 @@ function buildFunctionDeclarations(tools: ToolRegistry): FunctionDeclaration[] {
 }
 
 export async function runAgent<TOutput>(
-  config: RunnerConfig<TOutput>
+  config: RunnerConfig<TOutput>,
 ): Promise<RunnerResult<TOutput>> {
   const {
     agentName,
@@ -61,7 +65,7 @@ export async function runAgent<TOutput>(
       // Collect all function call parts from this turn
       const fnCallParts = (candidate.content.parts ?? []).filter(
         (p): p is Part & { functionCall: NonNullable<Part["functionCall"]> } =>
-          p.functionCall != null
+          p.functionCall != null,
       );
 
       if (fnCallParts.length === 0) {
@@ -83,7 +87,7 @@ export async function runAgent<TOutput>(
           const parseResult = finalResponseSchema.safeParse(args);
           if (!parseResult.success) {
             throw new Error(
-              `Final tool "${finalToolName}" args failed validation: ${parseResult.error.message}`
+              `Final tool "${finalToolName}" args failed validation: ${parseResult.error.message}`,
             );
           }
           finalOutput = parseResult.data;
@@ -153,7 +157,10 @@ export async function runAgent<TOutput>(
           latencyMs: Date.now() - toolStart,
         });
         responseParts.push({
-          functionResponse: { name, response: toolResult as Record<string, unknown> },
+          functionResponse: {
+            name,
+            response: toolResult as Record<string, unknown>,
+          },
         });
       }
 
